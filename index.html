@@ -400,6 +400,9 @@
                 <span class="current-week" id="current-week">Week of August 18-22, 2025</span>
                 <button class="nav-button" onclick="nextWeek()">Next Week →</button>
             </div>
+            <div style="margin-top: 5px; font-size: 10px; color: #B3A369;">
+                <span id="storage-status">Checking storage...</span>
+            </div>
         </div>
     </div>
 
@@ -745,35 +748,107 @@
 
         // Load bookings from localStorage on page load
         function loadBookingsFromStorage() {
-            const savedBookings = localStorage.getItem('libraryBookings');
-            if (savedBookings) {
-                try {
-                    bookings = JSON.parse(savedBookings);
-                    console.log('Loaded bookings from localStorage:', bookings);
-                } catch (error) {
-                    console.error('Error loading bookings from localStorage:', error);
+            try {
+                // Check if localStorage is available
+                if (typeof(Storage) !== "undefined") {
+                    const savedBookings = localStorage.getItem('libraryBookings');
+                    console.log('localStorage available, savedBookings:', savedBookings);
+                    
+                    if (savedBookings) {
+                        try {
+                            bookings = JSON.parse(savedBookings);
+                            console.log('Successfully loaded bookings from localStorage:', bookings);
+                            console.log('Number of bookings loaded:', Object.keys(bookings).length);
+                        } catch (error) {
+                            console.error('Error parsing bookings from localStorage:', error);
+                            bookings = {};
+                        }
+                    } else {
+                        console.log('No saved bookings found in localStorage');
+                        bookings = {};
+                    }
+                } else {
+                    console.error('localStorage is not available in this browser');
                     bookings = {};
                 }
+            } catch (error) {
+                console.error('Error accessing localStorage:', error);
+                bookings = {};
             }
         }
 
         // Save bookings to localStorage
         function saveBookingsToStorage() {
             try {
-                localStorage.setItem('libraryBookings', JSON.stringify(bookings));
-                console.log('Saved bookings to localStorage:', bookings);
+                // Check if localStorage is available
+                if (typeof(Storage) !== "undefined") {
+                    const bookingsString = JSON.stringify(bookings);
+                    localStorage.setItem('libraryBookings', bookingsString);
+                    console.log('Successfully saved bookings to localStorage:', bookings);
+                    console.log('Number of bookings saved:', Object.keys(bookings).length);
+                    console.log('localStorage size:', bookingsString.length, 'characters');
+                } else {
+                    console.error('localStorage is not available in this browser');
+                }
             } catch (error) {
                 console.error('Error saving bookings to localStorage:', error);
+                console.error('Error details:', error.message);
+            }
+        }
+
+        // Test localStorage functionality
+        function testLocalStorage() {
+            const statusElement = document.getElementById('storage-status');
+            
+            try {
+                if (typeof(Storage) !== "undefined") {
+                    console.log('✅ localStorage is available');
+                    
+                    // Test writing and reading
+                    const testKey = 'testKey';
+                    const testValue = 'testValue';
+                    localStorage.setItem(testKey, testValue);
+                    const retrievedValue = localStorage.getItem(testKey);
+                    
+                    if (retrievedValue === testValue) {
+                        console.log('✅ localStorage read/write test passed');
+                        localStorage.removeItem(testKey); // Clean up
+                        if (statusElement) {
+                            statusElement.textContent = '✅ Storage working';
+                            statusElement.style.color = '#28a745';
+                        }
+                    } else {
+                        console.error('❌ localStorage read/write test failed');
+                        if (statusElement) {
+                            statusElement.textContent = '❌ Storage failed';
+                            statusElement.style.color = '#dc3545';
+                        }
+                    }
+                } else {
+                    console.error('❌ localStorage is not available');
+                    if (statusElement) {
+                        statusElement.textContent = '❌ Storage unavailable';
+                        statusElement.style.color = '#dc3545';
+                    }
+                }
+            } catch (error) {
+                console.error('❌ localStorage test failed:', error);
+                if (statusElement) {
+                    statusElement.textContent = '❌ Storage error';
+                    statusElement.style.color = '#dc3545';
+                }
             }
         }
 
         // Load bookings when page loads
+        testLocalStorage();
         loadBookingsFromStorage();
         
         // Update calendar display after loading bookings
         // Use setTimeout to ensure DOM is fully loaded
         setTimeout(() => {
             updateCalendarDisplay();
+            console.log('Calendar display updated with', Object.keys(bookings).length, 'bookings');
         }, 100);
 
         function openBookingModal(day, period, slotType, timeRange) {
